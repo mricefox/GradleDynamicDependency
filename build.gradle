@@ -1,0 +1,56 @@
+// Top-level build file where you can add configuration options common to all sub-projects/modules.
+
+buildscript {
+    repositories {
+        jcenter()
+        maven {
+            repositories {
+                url 'https://oss.sonatype.org/content/repositories/releases/'
+            }
+        }
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:2.2.2'
+
+        // NOTE: Do not place your application dependencies here; they belong
+        // in the individual module build.gradle files
+    }
+}
+
+allprojects {
+    repositories {
+        jcenter()
+    }
+}
+
+task clean(type: Delete) {
+    delete rootProject.buildDir
+}
+
+/**
+ * depend project on artifact or source code
+ * @param projectName
+ * @return
+ */
+def convertDependency(projectName) {
+    def propFile = new File(rootDir, 'local.properties')
+    if (!propFile.exists()) {
+        throw IOException('local.properties not exists')
+    }
+    String line
+    propFile.withReader('UTF-8') { reader ->
+        while (line = reader.readLine()) {
+            def regExr = /^$projectName=[^\s]+/
+            if (line ==~ /$regExr/) {
+                println "-------> convertDependency adding binary dependency on project $projectName"
+                //use the notation in local.properties
+                return dependencies.create(line.substring(line.indexOf('=') + 1).trim()) {
+                    changing = true
+                    transitive = true
+                }
+            }
+        }
+        println "-------> convertDependency adding project dependency on project :$projectName"
+        return project(":$projectName")
+    }
+}

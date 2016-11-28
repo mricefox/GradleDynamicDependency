@@ -1,0 +1,74 @@
+rootProject.name = 'gradle-dynamic-dependency-root'
+include ':app'
+
+def depProjects =
+        //config git info of the project
+        [new DepInfo(':android-weak-handler', 'git@github.com:badoo/android-weak-handler.git', 'master')
+         //...more dependency project
+        ]
+
+def depsDirectory = new File(rootDir, 'dependencies')
+
+
+getSrcDepProjects(depProjects).each {
+    dep ->
+        println('-------> getDepProjects setting.gradle include=' + dep.name)
+        File depProjectFile = new File(depsDirectory, dep.name[1..-1])
+        if (!depProjectFile.directory) {
+            //clone project if not exist, use ssh method for convenient
+            def cmd = ['git', 'clone', '-b', dep.branch, dep.url, depProjectFile]
+            def process = cmd.execute()
+            process.waitFor()
+        }
+        //include the project which need source code dependency
+        include dep.name
+        project(dep.name).projectDir = new File(depsDirectory, dep.name[1..-1])
+}
+
+/**
+ * get project which need source code dependency, according to 'local.properties'
+ * with lines such as
+ * <pre class="prettyprint">
+ * 'dependency name=artifact notation'
+ * </pre>
+ * eg.
+ * <pre class="prettyprint">
+ * android-weak-handler=com.badoo.mobile:android-weak-handler:1.1
+ * </pre>
+ * every line represent a dependency
+ * @param depProjects
+ * @return
+ */
+def getSrcDepProjects(depProjects) {
+    def propFile = new File(rootDir, 'local.properties')
+    if (!propFile.exists()) {
+        throw IOException('local.properties not exists')
+    }
+    def shouldInclude = depProjects.collect()
+    String line
+    propFile.withReader('UTF-8') { reader ->
+        while (line = reader.readLine()) {
+            depProjects.each { depProject ->
+                def depName = depProject.name[1..-1]
+                def regExr = /^$depName=[^\s]+/
+                //begins with 'dependency name=' and followed by no whitespace character
+                if (line ==~ /$regExr/) {
+                    shouldInclude.remove(depProject)
+                }
+            }
+        }
+    }
+    return shouldInclude
+}
+
+class DepInfo {
+    String name
+    String url
+    String branch
+
+    DepInfo(String name, String url, String branch) {
+        this.name = name
+        this.url = url
+        this.branch = branch
+    }
+}
