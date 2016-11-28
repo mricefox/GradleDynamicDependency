@@ -7,20 +7,25 @@ Usage
 -----
 For example, if `app` module depend on `android-weak-handler`
 
-1. adding
-```java
-compile convertDependency('android-weak-handler')
+1. add dependency to `dependencies` block of `app`
+```groovy
+dependencies {
+	compile convertDependency('android-weak-handler')
+}
 ```
-to `dependencies` block of `app`
 
-2. add the following line to `local.properties`
-```java
+2. add the following line to `local.properties` like this
+```groovy
+ndk.dir=E\:\\android-sdk\\ndk-bundle
+sdk.dir=E\:\\android-sdk
 android-weak-handler=com.badoo.mobile:android-weak-handler:1.1
 ```
-now you enable artifact dependency.
+Now you enable artifact dependency.
  
-3. if you comment it as following 
-```java
+3. If you comment it as following 
+```groovy
+ndk.dir=E\:\\android-sdk\\ndk-bundle
+sdk.dir=E\:\\android-sdk
 #android-weak-handler=com.badoo.mobile:android-weak-handler:1.1
 ```
-the gradle script will clone the source code of `android-weak-handler` and include module named `android-weak-handler` into build.
+The gradle script will clone the source code of `android-weak-handler` and include module named `android-weak-handler` into build.
